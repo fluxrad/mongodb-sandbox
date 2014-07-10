@@ -2,22 +2,28 @@
 - hosts: all
   sudo: True
   vars:
-    replica_set_name: mongoTest
+    replica_set_name: sandbox
     mongodb_port: 27017
   tasks:
     - name: Add mongodb apt key
       apt_key: keyserver='hkp://keyserver.ubuntu.com:80' id=7F0CEB10 state=present
+
     - name: Add mongodb apt repository
       apt_repository: repo='deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' update_cache=true state=present
+
     - name: Install mongodb 2.4.10
       apt: name=mongodb-10gen=2.4.10 state=present
+
     - name: Setup file paths
       file: path=/srv/mongodb owner=mongodb group=mongodb state=directory
+
     - name: Create custom mongodb config
-      template: path=/etc/mongodb.conf src=templates/mongodb.conf.j2 owner=mongodb group=mongodb mode=0644
+      template: dest=/etc/mongodb.conf src=templates/mongodb.conf.j2 owner=mongodb group=mongodb mode=0644
       notify: restart mongodb
-    #- name: Clean up old prealloc files
-    #  file: path=/var/lib/mongodb
+
+    - name: Localize mongo insatnce
+      command: /usr/bin/mongo --eval "rs.initiate()"
+
   handlers:
     - name: restart mongodb
       service: name=mongodb state=restarted
